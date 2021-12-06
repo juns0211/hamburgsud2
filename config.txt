@@ -1,0 +1,16 @@
+{
+    'acc':'FOCOCINDYB',
+    'pw':'Fo27571024',
+    'email':'mailkill2000@gmail.com',
+    'data':{'sf':'SHANGHAI',  #出港
+            'st':'Santos',  #入港
+            'sd':'',  #日期(免填)
+            'cc':'TEXTILES:(NOS)',
+            'ct':"40' GENERAL PURPOSE",
+            'cq':'1',
+            'cw':'18000', #價格
+            'cu':'KG'}, #單位
+    'windows':True, #是否顯示視窗
+    'From':['SHANGHAI','NINGBO','SHEKOU'],
+    'To':['Santos','Ltapoa','Ltajai']
+    }

@@ -1,0 +1,28 @@
+acc: FOCOCINDYB #帳號
+pw: Fo27571024  #密碼
+email: verena@foco.com.tw #寄送地址
+timeout: 60 #等待時間
+
+data: 
+  sf: '' #出港(請勿填寫)
+  st: ''  #入港(請勿填寫)
+  sd: ''  #日期(免填)
+  cc: TEXTILES:(NOS)
+  ct: 40' GENERAL PURPOSE
+  cq: 1
+  cw: 18000 #價格
+  cu: KG #單位
+
+windows: True #是否顯示視窗(目前測試此網站如不顯示視窗會無法爬取資料)
+
+From: #出港(請依序填寫)
+  - Shanghai
+  - Ningbo
+  - Shekou
+  
+To: # 入港(請依序填寫)
+  - Santos
+  - Itapoa
+  - MANAUS
+
+login: False #登入狀態(請勿修改)
