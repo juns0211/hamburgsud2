@@ -1,57 +1,20 @@
 import time
 from bs4 import BeautifulSoup
+import requests_html
 import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 import smtplib
 import yaml
-from logger import logger
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import requests
-class request_robot:
-    def __init__(self, acc, pw):
-        self.acc = acc
-        self.pw = pw
-
-    def javax(self):
-        while True:
-            headers = {
-                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-                'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-                'cache-control': 'max-age=0',
-                #'cookie: JSESSIONID=227d210ee959029efb98f3bec976; NSC_JOnsxwg1eakpv1we5smnfuddwl54heT=ffffffff09c0ef0b45525d5f4f58455e445a4a423660; AKA_A2=A; ak_bmsc=3CBAEAA8DC8A880BDC2644DCA2A6FAB668549663A265000028C2356038404F0B~plqnjicod4ue63/zmSjpy8gmQBAJ/rUYqSmXVAWaDRiO9X/shg91KV+EQMd20LM5Tc4PGdMp9AC5IQgEFOB2Eptpxzq2gkc7vxs9OaPRpGLSww9MlYIEWWou0OW3elBhvjEJDY3CCKbEKlslcd90JU+MsF42OGynUxBBr5xsq3JDAqqJqc5S05/7U8rwvS+r7k0RWcBnJrjkWokbHAr82IAyqiMib6Jsxkf1tetbYFQZ+Bn876tgrOn3Khqxd0dQLzlFEjCAtSsGeDUoeHASTH16NbOZst3dF3PVSz0WZ6/bv+/qxQIl8sqrzpBcjXE0HQ; __cmpcc=1; __cmpcvcu6055=__s23_s24__; __cmpcpcu6055=____; _ga=GA1.2.1231995605.1614135864; _gid=GA1.2.619816091.1614135864',
-                'sec-fetch-dest': 'document',
-                'sec-fetch-mode': 'navigate',
-                'sec-fetch-site': 'none',
-                'sec-fetch-user': '?1',
-                'upgrade-insecure-requests': '1',
-                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.190 Safari/537.36',
-            }
-            rep = requests.get('https://www.hamburgsud-line.com/linerportal/pages/hsdg/login.xhtml?lang=en',headers=headers,timeout=20)
-            if rep.status_code == 200:
-                soup = BeautifulSoup(rep.text,'lxml')
-                javax_faces_ViewState = soup.find('input',{'name':'javax.faces.ViewState'}).get('value')
-                javax_faces_source = soup.find('div',{'id':'login'}).find('script').get('id')
-                loginForm = soup.find('div',{'id':'login'}).find('form').get('id')
-                data = {
-                    'javax.faces.partial.ajax': 'true',
-                    'javax.faces.source':javax_faces_source,
-                    'javax.faces.partial.execute':'@all',
-                    javax_faces_source:javax_faces_source,
-                    'clientTimeZone':'Asia/Taipei',
-                    loginForm:loginForm,
-                    f'{loginForm}:loginNameOrEmail':'',
-                    f'{loginForm}:password':'',
-                    'javax.faces.ViewState':javax_faces_ViewState,
-                }
-                return data
-            else:
-                continue
-
+import logger
+import logging
+import traceback
+import re
+logger = logging.getLogger('robot')
 class robot:
     def __init__(self, acc, pw, driver):
         self.acc = acc
@@ -60,116 +23,118 @@ class robot:
     def login(self):
         while True:
             try:
-                # self.driver.get('https://www.hamburgsud-line.com/liner/en/liner_services/ecommerce/login/login_stage.html')
-                # WebDriverWait(self.driver, 30, 0.5).until(EC.title_is('Login | Hamburg Süd'))
-                self.driver.get('https://www.hamburgsud-line.com/linerportal/pages/hsdg/login.xhtml')
-                WebDriverWait(self.driver, 30, 0.5).until(EC.title_is('Liner Portal Login'))
-                name = self.driver.find_element_by_css_selector('div > div > div > div > input.ui-inputfield.ui-inputtext.ui-widget.ui-state-default.ui-corner-all')
-                name.send_keys(self.acc)
-                password = self.driver.find_element_by_css_selector('div > div > div > div > input.ui-inputfield.ui-password.ui-widget.ui-state-default.ui-corner-all')
-                password.send_keys(self.pw)
-                self.driver.find_element_by_css_selector('div > div > div > div > button.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-icon-right.epButton').click()
+                self.driver.get('https://www.maersk.com/portaluser/login')
+                WebDriverWait(self.driver, 30, 0.5).until(EC.title_is('Login - Maersk Identity and Access Management Portal'))
+                cookies = self.driver.find_element_by_css_selector('button[aria-label="Allow all"]')
+                if cookies:
+                    cookies.click()
+                name = self.driver.find_element_by_css_selector('input[id="usernameInput"]').send_keys(self.acc)
+                time.sleep(1)
+                password = self.driver.find_element_by_css_selector('input[id="passwordInput"]').send_keys(self.pw)
+                time.sleep(1)
+                self.driver.find_element_by_css_selector('button[class="mt-4 button button--primary"]').click()
+                # 判斷15分鐘才能登入
+                html = requests_html.HTML(html=self.driver.page_source)
+                data = html.find('div[class="notification__text"] > span.p')
+                if data and data[0].text == 'Please wait 15 minutes before you log in again':
+                    logger.warning('等待15分鐘重登')
+                    time.sleep(900)
+                    continue
                 return self.driver
             except Exception as e:
-                logger.warning(str(e))
+                logger.critical('\n' + traceback.format_exc())
                 time.sleep(3)
                 continue
-    def new_booking(self,data):
+    def instantPrice(self,data):
         while True:
             try:
                 #新網址
-                self.driver.get('https://www.hamburgsud-line.com/linerportal/pages/hsdg/secured/bookingRequest.xhtml?lang=en')
-                soup = BeautifulSoup(self.driver.page_source,'lxml')
-                if soup.find('title').text == 'Booking Request':
-                    logger.info(f"機器人回報任務:開始輸入搜尋資料>出港[{data['sf']}]，入港[{data['st']}]")
-                else:
-                    return False
-                #sf
-                self.driver.find_element_by_css_selector('input[class="ui-autocomplete-input ui-inputfield ui-widget ui-state-default ui-corner-all"]').send_keys(data['sf'])
-                time.sleep(0.5)
-                self.driver.find_element_by_css_selector('tr[class="ui-autocomplete-item ui-autocomplete-row ui-widget-content ui-corner-all ui-state-highlight"]').click()
-                #st
-                self.driver.find_element_by_css_selector('span[class="ui-autocomplete toUnLocationAjaxStatus"] > input[class="ui-autocomplete-input ui-inputfield ui-widget ui-state-default ui-corner-all"]').send_keys(data['st'])
-                time.sleep(0.5)
-                self.driver.find_element_by_css_selector('tr[class="ui-autocomplete-item ui-autocomplete-row ui-widget-content ui-corner-all ui-state-highlight"]').click()
-                #sd
-                self.driver.find_element_by_css_selector('span[class="ui-calendar hasdatepicker"] > input[class="ui-inputfield ui-widget ui-state-default ui-corner-all hasDatepicker"]').send_keys(data['sd'])
-                time.sleep(0.5)
-                #cc
-                self.driver.find_element_by_css_selector('div.commodityContainerColumn > div.ui-selectonemenu.ui-widget.ui-state-default.ui-corner-all > label').click()
-                time.sleep(0.5)
-                self.driver.find_element_by_css_selector('div.ui-input-overlay > div.ui-selectonemenu-filter-container > input').send_keys(data['cc'])
-                time.sleep(0.5)
-                self.driver.find_element_by_css_selector(f'li[data-label="{data["cc"]}"]').click()
-                #ct
-                self.driver.find_element_by_css_selector('div.container-row-even > div.ui-g.ui-fluid.ui-g-nopad > div:nth-child(2) > div.ui-selectonemenu.ui-widget.ui-state-default.ui-corner-all > div.ui-selectonemenu-trigger.ui-state-default.ui-corner-right').click()
-                time.sleep(0.5)
-                soup = BeautifulSoup(self.driver.page_source,'lxml')
-                ids = [i.get('id') for i in soup.find_all('div',{'class':'ui-input-overlay'})]
-                self.driver.find_element_by_css_selector(f'div[id="{ids[3]}"] > div.ui-selectonemenu-filter-container > input').send_keys(data['ct'])
-                time.sleep(0.5)
-                self.driver.find_element_by_css_selector(f'li[data-label="{data["ct"]}"]').click()
-                #cq
-                ids = [i.find('input').get('id') for i in soup.find_all('span',{'class':'ui-inputnumber ui-widget'})]
-                self.driver.find_element_by_css_selector(f'input[id="{ids[0]}"]').send_keys(data['cq'])
-                time.sleep(0.5)
-                #cw
-                self.driver.find_element_by_css_selector(f'input[id="{ids[1]}"]').send_keys(data['cw'])
-                time.sleep(0.5)
-                #cu
-                rep = soup.find('div',{'class':'container-row-even'}).find('div')
-                for i in rep.find_all('div'):
-                    if i.find('label') == None:
-                        continue
-                    if i.find('label').text == 'UoM*':
-                        ids = i.find('label',{'class':'ui-corner-all'}).get('id')
-                self.driver.find_element_by_css_selector(f'label[id="{ids}"]').click()
-                time.sleep(0.5)
-                self.driver.find_element_by_css_selector(f'li[data-label="{data["cu"]}"]').click()
-                #continue
-                time.sleep(0.5)
-                for i in soup.find_all('button',{'class':'epButton'}):
-                    for j in i.find_all('span'):
-                        if j.text == 'Continue':
-                            next_id = i.get('id')
-                self.driver.find_element_by_css_selector(f'button[id="{next_id}"]').click()
+                self.driver.get('https://www.maersk.com/instantPrice/')
+                WebDriverWait(self.driver, 30, 0.5).until(EC.title_is('Combined Pricing Journey'))
+                logger.info(f"機器人回報任務:開始輸入搜尋資料>出港[{data['select_from']}]，入港[{data['select_to']}]")
+                #select_from
+                for key in data['select_from']:
+                    self.driver.find_element_by_css_selector('div[class="searchFormOrigin"] input[placeholder="Enter city name"]').send_keys(key)
+                    time.sleep(0.1)
+                time.sleep(1)
+                self.driver.find_element_by_css_selector('div[class="typeahead__suggestions typeahead__suggestions--open"] li').click()
+                time.sleep(1)
+
+                #select_to
+                for key in data['select_to']:
+                    self.driver.find_element_by_css_selector('div[class="searchFormDestination"] input[placeholder="Enter city name"]').send_keys(key)
+                    time.sleep(0.1)
+                time.sleep(1)
+                self.driver.find_element_by_css_selector('div[class="typeahead__suggestions typeahead__suggestions--open"] li').click()
+                time.sleep(1)
+
+                #Commodity
+                self.driver.find_element_by_css_selector('input[placeholder="Enter Commodity"]').send_keys(data['Commodity'])
+                time.sleep(1)
+                self.driver.find_element_by_css_selector('div[class="typeahead__suggestions typeahead__suggestions--open"] li').click()
+
+                #Container_type
+                self.driver.find_element_by_css_selector('input[placeholder="Select container type"]').send_keys(data['Container_type'])
+                time.sleep(1)
+                self.driver.find_element_by_css_selector('div[class="typeahead__suggestions typeahead__suggestions--open"] li').click()
+
+                #select_date
+                self.driver.find_element_by_css_selector('input[placeholder="Select Date"]').click()
+                time.sleep(1)
+                self.driver.find_element_by_css_selector(f'tr > td[title="{data["select_date"]}"]').click()
+                time.sleep(1)
+
+                #search
+                self.driver.find_element_by_css_selector('button[class="button button--primary"]').click()
+                #time.sleep(4)
+                #確定頁面加載完成
+                WebDriverWait(self.driver, 30, 0.5).until(EC.presence_of_element_located((By.CLASS_NAME,'available-rates')))
                 return self.driver
             except Exception as e:
-                #logger.info(str(e))
+                logger.critical('\n' + traceback.format_exc())
+                time.sleep(3)
+                continue
+    def departure_dates(self, lens):
+        content = []
+        switch = False #詳細資料是否開啓
+        while True:
+            try:
+                for i in range(1, lens+1):
+                    resp = {}
+                    total = 0 #金額總和
+                    currency = '' #幣別
+                    self.driver.find_element_by_css_selector(f'div.available-rates section div.combined-slide.desktop div[aria-hidden="false"]:nth-child({i})').click()
+                    html = requests_html.HTML(html=self.driver.page_source)
+                    date = html.find('div.available-rates section div.combined-slide.desktop div[aria-hidden="false"] div.slide-inside--date > div')[i-1].text
+                    # 判斷有無下拉視窗
+                    if not html.find('div[class="text-icon toggle desktop"]'):
+                        logger.info(f'機器人回報任務:已處理第{i}/{lens}筆資料, 船期:{date}, 總價格:無')
+                        continue
+                    if not switch:
+                        self.driver.find_element_by_css_selector('div.text-icon.toggle.desktop > span').click()
+                        html = requests_html.HTML(html=self.driver.page_source)
+                        switch = True
+                    # d = html.find('section.schedule-info > div > dl > dd')[0].text
+                    # date = re.search('(?P<long_date>\d+ \w+).+', d).groupdict()['long_date']
+                    moneys = [data.text for data in html.find('section.rate-details-card.flex--row.wrap td[data-test="freight--charge-container-wise"]')]
+                    for money in moneys:
+                        total += float(re.search('(?P<currency>\w+) (?P<money>.+)', money).groupdict()['money'].replace(',',''))
+                        if not currency:
+                            currency = re.search('(?P<currency>\w+) (?P<money>.+)', money).groupdict()['currency']
+                    resp['Departure'] = date
+                    resp['Ocean Freight'] = f'{currency}{total:.2f}'
+                    content.append(resp)
+                    logger.info(f'機器人回報任務:已處理第{i}/{lens}筆資料, 船期:{date}, 總價格:{currency}{total:.2f}')
+                return content
+            except Exception as e:
+                logger.critical('\n' + traceback.format_exc())
                 time.sleep(3)
                 continue
 
-    def later(self):
-        while True:
-            try:
-                self.driver.find_elements_by_css_selector('div.ui-g-2.ui-md-2.ui-xl-2 > button.ui-button.ui-widget.ui-state-default.ui-corner-all.ui-button-text-icon-left.epButton')[-1].click()
-                return self.driver
-            except Exception as e:
-                #logger.info(str(e))
-                time.sleep(3)
-                continue
-    def click(self,data_ri):
-        while True:
-            try:
-                self.driver.find_element_by_css_selector(f'a[id="{data_ri}"]').click()
-                return self.driver
-            except Exception as e:
-                #logger.info(str(e))
-                time.sleep(3)
-                continue
-    def close(self):
-        while True:
-            try:
-                self.driver.find_element_by_css_selector('div.ui-g-12.ui-md-12.ui-lg-3.ui-xl-3 > button').click()
-                return self.driver
-            except Exception as e:
-                #logger.info(str(e))
-                time.sleep(3)
-                continue
     def times(self,days:int = 0):
         while True:
             try:
-                times = (datetime.datetime.now() + datetime.timedelta(days=5+days)).strftime("%d-%b-%Y")
+                times = (datetime.datetime.now() + datetime.timedelta(days=3+days)).strftime("%d %b %Y")
                 return times
             except Exception as e:
                 logger.info(str(e))
