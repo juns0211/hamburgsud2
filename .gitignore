@@ -1,0 +1,11 @@
+__pycache__
+運費報告*
+*.log
+dist/船*
+dist/config.yaml
+dist/*記錄檔
+dist/main
+dist/*.exe
+build
+.vscode
+config/log/
