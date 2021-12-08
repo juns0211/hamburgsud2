@@ -13,12 +13,14 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import logger
 import logging
 import traceback
+from pathlib import Path
 logger = logging.getLogger('robot')
 
 def main():
     #to_excel = 準備傳出去的excel檔格式
     to_excel = {'POL(From)':[],'POD(To)':[],'ETD(departure)':[],'Ocean Freight':[]}
     except_count = 0
+    path = str(Path('chromedriver.exe').absolute())
     #讀取檔案
     cf = read_yaml()
     if isinstance(cf,str):
@@ -29,13 +31,13 @@ def main():
             if cf['windows']:
                 options = webdriver.ChromeOptions()
                 options.add_experimental_option('excludeSwitches', ['enable-logging'])#禁止打印日志
-                driver = webdriver.Chrome(chrome_options=options)
+                driver = webdriver.Chrome(path, chrome_options=options)
                 driver.set_page_load_timeout(cf['timeout'])
             else:
-                option=webdriver.ChromeOptions()
-                option.add_argument('headless')
+                options = webdriver.ChromeOptions()
+                options.add_argument('headless')
                 options.add_experimental_option('excludeSwitches', ['enable-logging'])#禁止打印日志
-                driver = webdriver.Chrome(chrome_options=option)
+                driver = webdriver.Chrome(path, chrome_options=options)
                 driver.set_page_load_timeout(cf['timeout'])
             driver.implicitly_wait(10) #隱性等待時間
             content = robot(cf['acc'], cf['pw'], driver)

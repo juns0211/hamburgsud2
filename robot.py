@@ -28,9 +28,9 @@ class robot:
                 cookies = self.driver.find_element_by_css_selector('button[aria-label="Allow all"]')
                 if cookies:
                     cookies.click()
-                name = self.driver.find_element_by_css_selector('input[id="usernameInput"]').send_keys(self.acc)
+                self.driver.find_element_by_css_selector('input[id="usernameInput"]').send_keys(self.acc)
                 time.sleep(1)
-                password = self.driver.find_element_by_css_selector('input[id="passwordInput"]').send_keys(self.pw)
+                self.driver.find_element_by_css_selector('input[id="passwordInput"]').send_keys(self.pw)
                 time.sleep(1)
                 self.driver.find_element_by_css_selector('button[class="mt-4 button button--primary"]').click()
                 # 判斷15分鐘才能登入
@@ -173,7 +173,7 @@ def read_file():
 def read_yaml():
     try:
         file = open('config.yaml','r',encoding='utf-8')
-        data = yaml.load(file.read(),yaml.SafeLoader)
+        data = yaml.load(file.read(), yaml.SafeLoader)
         return data
     except Exception as e:
         logger.info(e)
