@@ -6,6 +6,7 @@ dist/config.yaml
 dist/*記錄檔
 dist/main
 dist/*.exe
+dist/*.7z
 build
 .vscode
 config/log/
