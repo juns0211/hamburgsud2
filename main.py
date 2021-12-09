@@ -1,4 +1,3 @@
-#import config as cf
 import requests_html
 from robot import robot, read_yaml
 import time
@@ -10,7 +9,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-import logger
+import log
 import logging
 import traceback
 from pathlib import Path
@@ -46,8 +45,8 @@ def main():
                     if not cf['login']:
                         logger.info('機器人回報任務:開始進行登入')
                         content.login()
-                        # 確認來到此頁,最多等30秒,每0.5秒檢查一次
-                        WebDriverWait(content.driver, 120, 1).until(EC.title_is('Maersk :: Hub'))
+                        # 確認來到此頁,最多等N秒,每0.5秒檢查一次
+                        WebDriverWait(content.driver, 1800, 0.5).until(EC.title_is('Maersk :: Hub'))
                         logger.info('機器人回報任務:登入成功')
                         cf['login'] = True
                         time.sleep(1.5) #防止被鎖
@@ -78,9 +77,12 @@ def main():
                 file_path = f'{os.getcwd()}\\運費報告{file_path_time}.xlsx'
                 logger.info('機器人回報任務:己存取EXCEL成功')
                 logger.info(f'機器人回報任務:檔案路徑:{file_path}')
-                email = content.email(cf['email'], file_path)
+                content.email(cf['email'], file_path)
                 logger.info('機器人回報任務:任務結束')
-                return email
+                start_time = datetime.datetime.now() + datetime.timedelta(minutes=cf['robot_timeout'])
+                logger.info(f"關閉延時共:{cf['robot_timeout'] * 60}秒, 預計:{start_time.strftime('%Y-%m-%d %H:%M:%S')}關閉網頁")
+                time.sleep(cf['robot_timeout'] * 60) #轉換為秒
+                return
             else:
                 logger.info('任務結束:查無價格')
                 return

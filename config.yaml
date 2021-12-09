@@ -1,7 +1,7 @@
 acc: FOCO_taiwan #帳號
 pw: Tony0101  #密碼
 email: verena@foco.com.tw #寄送地址
-timeout: 60 #等待時間
+timeout: 60 #等待時間(秒)
 
 data: 
   select_from: '' #出港(請勿填寫)
@@ -11,15 +11,15 @@ data:
   Container_type: 40 dry high
 
 windows: True #是否顯示視窗(目前測試此網站如不顯示視窗會無法爬取資料)
-
+robot_timeout: 60 #頁面關閉時間(分)
 From: #出港(請依序填寫)
   - Shanghai
-  - Ningbo
+  - Shanghai
   - ab
   
-To: # 入港(請依序填寫)
+To: #入港(請依序填寫)
   - Durban
-  - Itapoa
+  - Santos
   - ab
 
 login: False #登入狀態(請勿修改)
